@@ -1,11 +1,12 @@
 import os
 import logging
-from flask import Flask, jsonify
-from flask_sqlalchemy import SQLAlchemy
-from docx import Document
+from flask import Flask, jsonify # type: ignore
+from flask_sqlalchemy import SQLAlchemy # type: ignore
+from docx import Document # type: ignore
 import pdfplumber # type: ignore
-import pandas as pd
+import pandas as pd # type: ignore
 import json
+import sys
 
 # Logging Configuration
 logging.basicConfig(level=logging.INFO)
@@ -81,7 +82,40 @@ def extract_pdf_tables(pdf_path):
         return json.dumps(json_data)  
     return json.dumps([])  
 
+#only parse new pdf  
+def process_single_pdf(file_path):
+    if not os.path.exists(file_path):
+        logging.error(f"PDF file does not exist: {file_path}")
+        return
 
+    order_id = os.path.splitext(os.path.basename(file_path))[0]
+    logging.info(f"Processing single PDF file: {file_path}")
+
+    extracted_data = extract_pdf_tables(file_path)
+    try:
+        extracted_data_list = json.loads(extracted_data)
+    except json.JSONDecodeError as e:
+        logging.error(f"Error parsing extracted_data: {e}")
+        extracted_data_list = []
+
+    extracted_data = "\n".join(f"{entry['Item']}\t{entry['Ordered']}" 
+                                 for entry in extracted_data_list 
+                                 if entry.get('Item') and entry.get('Ordered'))
+
+    existing_entry = PDFFileLog.query.filter_by(order_id=order_id, file_name=os.path.basename(file_path)).first()
+    if existing_entry:
+        logging.info(f"Duplicate PDF entry detected for Order ID {order_id}. Skipping insert.")
+    else:
+        db.session.add(PDFFileLog(
+            order_id=order_id,
+            file_name=os.path.basename(file_path),
+            file_path=file_path,
+            extracted_data=json.dumps(extracted_data)
+        ))
+        db.session.commit()
+        logging.info(f"Inserted PDF data for Order ID: {order_id}")
+
+#Parse all the pdfs in the folder
 def process_pdf_files(folder_path):
     pdf_data = {}
     for root, _, files in os.walk(folder_path):
@@ -213,8 +247,8 @@ def load_word_files_to_db(word_data):
 
 # Main Functions
 def process_all_work_order_pdfs():
-    WO_PDF_FOLDER = r"\\NEOUSYSSERVER\Drive D\QuickBooks\2- Year 2024\Work Order- WO"
-    WO_PDF_FOLDER2 = r"\\NEOUSYSSERVER\Drive D\QuickBooks\3- Year 2025\Work Order- WO"
+    WO_PDF_FOLDER = r"\\Quickbook2024\d\Drive D\QuickBooks\2- Year 2024\Work Order- WO"
+    WO_PDF_FOLDER2 = r"\\Quickbook2024\d\Drive D\QuickBooks\3- Year 2025\Work Order- WO"
     logging.info("Processing all Work Order PDF files...")
     pdf_data = process_pdf_files(WO_PDF_FOLDER)
     pdf_data.update(process_pdf_files(WO_PDF_FOLDER2))
@@ -223,6 +257,7 @@ def process_all_work_order_pdfs():
     else:
         logging.info("No PDF files found in the Work Order folder.")
     logging.info("All Work Order PDF files processed and saved.")
+
 
 def process_all_work_order_words():
     WO_WORD_FOLDER = r"C:\Users\Admin\OneDrive - neousys-tech\Share NTA Warehouse\02 Work Order- Word file\Work Order 2024"
@@ -235,6 +270,20 @@ def process_all_work_order_words():
     else:
         logging.info("No Word files found in the Work Order folder.")
     logging.info("All Work Order Word files processed and saved.")
+
+
+def update_pdf_file_paths(old_base_path, new_base_path):
+    entries = PDFFileLog.query.all()
+    updated_count = 0
+
+    for entry in entries:
+        if entry.file_path.startswith(old_base_path):
+            entry.file_path = entry.file_path.replace(old_base_path, new_base_path)
+            updated_count += 1
+
+    db.session.commit()
+    logging.info(f"✅ Updated file paths for {updated_count} PDF entries.")
+
 
 # ✅ API Endpoint (was from API_server.py)
 @app.route('/api/word-files', methods=['GET'])
@@ -253,30 +302,34 @@ def get_all_word_files():
         logging.error(f"Error fetching Word files: {e}")
         return jsonify({"error": str(e)}), 500
 
-# Flask Main Context
 if __name__ == "__main__":
     with app.app_context():
         logging.info("Initializing database tables...")
         try:
             db.create_all()
-            logging.info("Database initialized successfully.")
         except Exception as e:
             logging.error(f"Database initialization error: {e}")
             exit(1)
 
-        # Validate paths
-        validate_paths([
-            r"\\NEOUSYSSERVER\Drive D\QuickBooks\2- Year 2024\Work Order- WO",
-            r"\\NEOUSYSSERVER\Drive D\QuickBooks\3- Year 2025\Work Order- WO",
-            r"C:\Users\Admin\OneDrive - neousys-tech\Share NTA Warehouse\02 Work Order- Word file\Work Order 2024",
-            r"C:\Users\Admin\OneDrive - neousys-tech\Share NTA Warehouse\02 Work Order- Word file\Work Order 2025"
-        ])
+        # Example: update base folder path for PDFs and Word docs
+        old_pdf_path = r"\\NEOUSYSSERVER\Drive D\QuickBooks\2- Year 2024\Work Order- WO"
+        new_pdf_path = r"\\Quickbook2024\d\Drive D\QuickBooks\3- Year 2025\Work Order- WO"
+        update_pdf_file_paths(old_pdf_path, new_pdf_path)
 
-        # Process files
-        process_all_work_order_pdfs()
-        process_all_work_order_words()
+        if len(sys.argv) > 1:
+            file_path = sys.argv[1]
+            process_single_pdf(file_path)
+        else:
+            validate_paths([
+                r"\\quickbook2024\d\Drive D\QuickBooks\3- Year 2024\Work Order- WO",
+                r"\\quickbook2024\d\Drive D\QuickBooks\3- Year 2025\Work Order- WO",
+                r"C:\\Users\\Admin\\OneDrive - neousys-tech\\Share NTA Warehouse\\02 Work Order- Word file\\Work Order 2024",
+                r"C:\\Users\\Admin\\OneDrive - neousys-tech\\Share NTA Warehouse\\02 Work Order- Word file\\Work Order 2025"
+            ])
+            process_all_work_order_pdfs()
+            process_all_work_order_words()
 
-    logging.info("🚀 Starting API server on http://localhost:5001")
-    app.run(host="0.0.0.0", port=5001, debug=True)
+        logging.info("🚀 Starting API server on http://localhost:5001")
+        app.run(host="0.0.0.0", port=5001, debug=True)
 
 

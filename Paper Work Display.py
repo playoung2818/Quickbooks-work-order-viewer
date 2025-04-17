@@ -34,8 +34,8 @@ class WordFileLog(db.Model):
 
 
 # 🏗 Load Inventory & Sales Order Data
-sales_order_file = r"c:\Users\Admin\OneDrive - neousys-tech\Desktop\Open Sales Order\Open Sales Order 3_20_2025.CSV"
-warehouse_inventory_file = r"c:\Users\Admin\OneDrive - neousys-tech\Desktop\QuickBook\WH01S_3_20.CSV"
+sales_order_file = r"c:\Users\Admin\OneDrive - neousys-tech\Desktop\Open Sales Order\Open Sales Order 4_17_2025.CSV"
+warehouse_inventory_file = r"c:\Users\Admin\OneDrive - neousys-tech\Desktop\QuickBook\WH01S_4_17.CSV"
 
 try:
     df_sales_order = pd.read_csv(sales_order_file, encoding="ISO-8859-1")
@@ -48,7 +48,7 @@ except UnicodeDecodeError:
     inventory_df = pd.read_csv(warehouse_inventory_file, encoding="latin1")
 
 # 📡 API URL
-url = "http://192.168.60.121:5001/api/word-files"
+url = "http://192.168.60.133:5001/api/word-files"
 
 # Fetch API data
 response = requests.get(url)

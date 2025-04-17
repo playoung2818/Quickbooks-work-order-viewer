@@ -2,16 +2,16 @@ import os
 import time
 import logging
 import subprocess
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer # type: ignore
+from watchdog.events import FileSystemEventHandler # type: ignore
 
 # Logging Configuration
 logging.basicConfig(level=logging.INFO)
 
 # Paths to monitor
 WATCHED_FOLDERS = [
-    r"\\NEOUSYSSERVER\Drive D\QuickBooks\2- Year 2024\Work Order- WO",
-    r"\\NEOUSYSSERVER\Drive D\QuickBooks\3- Year 2025\Work Order- WO",
+    r"\\quickbook2024\d\Drive D\QuickBooks\2- Year 2024\Work Order- WO",
+    r"\\Quickbook2024\d\Drive D\QuickBooks\3- Year 2025\Work Order- WO",
     r"C:\Users\Admin\OneDrive - neousys-tech\Share NTA Warehouse\02 Work Order- Word file\Work Order 2024",
     r"C:\Users\Admin\OneDrive - neousys-tech\Share NTA Warehouse\02 Work Order- Word file\Work Order 2025"
 ]
@@ -39,7 +39,7 @@ class FileEventHandler(FileSystemEventHandler):
 
         try:
             # Run the script in a new terminal
-            subprocess.run(["python", FILE_SCRIPT_DEBUG], shell=True, check=True)
+            subprocess.run(["python", FILE_SCRIPT_DEBUG, file_path], shell=True, check=True)
             logging.info(f"✅ Successfully ran '{FILE_SCRIPT_DEBUG}'")
         except subprocess.CalledProcessError as e:
             logging.error(f"❌ Failed to run '{FILE_SCRIPT_DEBUG}': {e}")
