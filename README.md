@@ -1,4 +1,4 @@
-# 📂 Work Order Viewer
+# Work Order Viewer
 
 If you're using **QuickBooks** as your ERP system, this demo app shows you how to **track the status of each Work Order (WO)** in a centralized and automated way.
 
@@ -9,7 +9,7 @@ With this tool, you can easily:
 
 ---
 
-## 📄 What You Need
+## What You Need
 
 To get started, you'll need the following files (all generated from QuickBooks or your production records):
 
@@ -23,22 +23,22 @@ To get started, you'll need the following files (all generated from QuickBooks o
 
 ---
 
-## 🔧 Features
+## Features
 
-- 🕵️ **Automatic File Monitoring**  
+- **Automatic File Monitoring**  
   Watches your folders for new or updated files using `watchdog`.
 
-- 📄 **Work Order Extraction**  
+- **Work Order Extraction**  
   Parses part numbers and quantities from both **Word** and **PDF** documents.
 
-- 🛢 **Persistent Storage with PostgreSQL**  
+- **Persistent Storage with PostgreSQL**  
   Logs all work order and inventory information to a database.
 
-- 📊 **Interactive Web Dashboard**  
+- **Interactive Web Dashboard**  
   View and explore:
   - PDF versions of Work Orders  
   - Extracted Word document details (e.g., serial numbers)  
   - Inventory and component availability
 
-- 🧩 **REST API Endpoint**  
+- **REST API Endpoint**  
   - `GET /api/word-files` → Returns up-to-date data from the Word files and their status.
