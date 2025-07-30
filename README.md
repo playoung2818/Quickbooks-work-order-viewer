@@ -1,6 +1,6 @@
 # Work Order Viewer
 
-If you're using **QuickBooks** as your ERP system, this demo app shows you **content** & **status** of each Work Order (WO) in a centralized and automated way.
+If you're using **QuickBooks** as your ERP system, this demo app shows you **Content** & **Status** of each Work Order (WO) in a centralized and automated way.
 
 With this tool, you can easily:
 - Check **whether a Work Order is completed**
